@@ -6,8 +6,8 @@ import urllib.request
 from main.settings import MEDIA_ROOT
 from celery.utils.log import get_task_logger
 from celery import shared_task
-from core.models import Exchanges,Instrument,Tick
-from datetime import datetime
+from core.models import Exchanges,Instrument,Tick,SubscribedInstruments,Candle
+from datetime import datetime,time
 from core.breeze import BreezeSession
 logger = get_task_logger(__name__)
 
@@ -103,7 +103,7 @@ def load_data(id):
         Instrument.objects.bulk_create(ch)
 
 
-@shared_task(name='websocket')
+@shared_task(name='websocket_start')
 def websocket_start():
     sess = BreezeSession()
     sess.breeze.ws_connect()
@@ -112,11 +112,51 @@ def websocket_start():
         tick_handler.delay(ticks)
 
     sess.breeze.on_ticks = on_ticks
-    sess.breeze.subscribe_feeds(stock_token="4.1!NIFTY 50")
-    sess.breeze.subscribe_feeds(stock_token="4.1!42697")
+    sub_ins = SubscribedInstruments.objects.all()
+    if sub_ins.exists():
+        for ins in sub_ins:
+            sess.breeze.subscribe_feeds(stock_token=ins.stock_token)
+
+    #sess.breeze.subscribe_feeds(stock_token="4.1!NIFTY 50")
+    #sess.breeze.subscribe_feeds(stock_token="4.1!42697")
 
 @shared_task(name='tick_handler')
 def tick_handler(ticks):
-    date = datetime.strptime(ticks['ltt'], '%a %b %d %H:%M:%S %Y')
-    tick = Tick(stock_token=ticks['symbol'],ltp=ticks['last'],date=date)
-    tick.save()
+    current_time = datetime.now()
+    if current_time.time() >=time(hour=9,minute=15) and current_time.time()<=time(hour=15,minute=30):
+        date = datetime.strptime(ticks['ltt'], '%a %b %d %H:%M:%S %Y')
+        sub_ins = SubscribedInstruments.objects.get(stock_token=ticks['symbol'])
+        tick = Tick(instrument=sub_ins,ltp=ticks['last'],date=date)
+        tick.save()
+    #else:
+    #    pass
+
+@shared_task(name='candle_maker')
+def candle_maker():
+    sub_ins = SubscribedInstruments.objects.all()
+    if sub_ins.exists():
+        for ins in sub_ins:
+            sub_candle_maker.delay(ins.id)
+
+
+@shared_task(name='sub_candle_maker')
+def sub_candle_maker(ins_id):
+    ticks = Tick.objects.filter(instrument_id=ins_id,used=False).order_by('date')
+    if ticks.exists():
+        for tick in ticks:
+            candle_filter = Candle.objects.filter(instrument_id=ins_id,date=tick.date.replace(second=0,microsecond=0))
+            if not candle_filter.exists():
+                ins = SubscribedInstruments.objects.get(id=ins_id)
+                Candle.objects.create(instrument=ins,date=tick.date.replace(second=0,microsecond=0),\
+                                    open=tick.ltp,low=tick.ltp,close=tick.ltp,high=tick.ltp)
+            else:#exists
+                if candle_filter[0].low > tick.ltp:
+                    candle_filter.update(low=tick.ltp,close=tick.ltp)
+
+                if candle_filter[0].high < tick.ltp:
+                    candle_filter.update(high=tick.ltp,close=tick.ltp)
+                
+                if candle_filter[0].high> tick.ltp >candle_filter[0].low :
+                    candle_filter.update(close=tick.ltp)
+    #ticks.update(used=True)
+    ticks.delete()

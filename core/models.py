@@ -42,10 +42,41 @@ class Instrument(models.Model):
         return "Token:"+str(self.token) +" Instrument:"+ str(self.instrument) +" Expiry:"+\
               str(self.expiry)+" Strike Price"+str(self.strike_price)
     
-class Tick(models.Model):
+class SubscribedInstruments(models.Model):
+    exchange = models.ForeignKey(Exchanges, on_delete=models.CASCADE)
     stock_token = models.CharField(blank=True,null=True,max_length=255)
+    token = models.CharField(blank=True,null=True,max_length=255)
+    instrument = models.CharField(null=True,blank=True,max_length=255)
+    short_name = models.CharField(blank=True,null=True,max_length=255)
+    series = models.CharField(blank=True,null=True,max_length=255)
+    company_name = models.CharField(null=True,blank=True,max_length=255)
+    expiry = models.DateField(blank=True,null=True)
+    strike_price = models.FloatField(blank=True,null=True)
+    option_type = models.CharField(blank=True,null=True,max_length=255)
+    exchange_code = models.CharField(blank=True,null=True,max_length=255)
+
+    def __str__(self):
+        return "Token:"+str(self.token) +" Instrument:"+ str(self.instrument) +" Expiry:"+\
+              str(self.expiry)+" Strike Price"+str(self.strike_price)
+
+class Tick(models.Model):
+    instrument = models.ForeignKey(SubscribedInstruments, on_delete=models.CASCADE, null=True,blank=True)
     ltp = models.FloatField(blank=True,null=True)
     date = models.DateTimeField(blank=True,null=True)
+    used = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return f'Name:{self.stock_token}| LTP:{self.ltp} | TimeStamp:{self.date}'
+        return f'Name:{self.instrument.short_name}| LTP:{self.ltp} | TimeStamp:{self.date}'
+    
+class Candle(models.Model):
+    instrument = models.ForeignKey(SubscribedInstruments, on_delete=models.CASCADE, null=True,blank=True)
+    open = models.FloatField(null=False)
+    high = models.FloatField(null=False)
+    low = models.FloatField(null=False)
+    close = models.FloatField(null=False)
+    date = models.DateTimeField(null=False)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return str(self.date) + " o:" + str(self.open) + " h:" + str(self.high) \
+               + " l:" + str(self.low) + " c:" + str(self.close)

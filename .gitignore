@@ -3,3 +3,4 @@ __pycache__
 migrations
 media
 venv
+celerybeat-schedule
