@@ -80,3 +80,12 @@ class Candle(models.Model):
     def __str__(self):
         return str(self.date) + " o:" + str(self.open) + " h:" + str(self.high) \
                + " l:" + str(self.low) + " c:" + str(self.close)
+    
+class Percentage(models.Model):
+    source = models.CharField(blank=True,null=True,max_length=255)
+    value = models.FloatField(blank=True,null=True)
+
+    def __str__(self) -> str:
+        return f'Source:{self.source}| Value:{self.value}'
+    
+    

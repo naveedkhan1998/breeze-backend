@@ -6,7 +6,7 @@ import urllib.request
 from main.settings import MEDIA_ROOT
 from celery.utils.log import get_task_logger
 from celery import shared_task
-from core.models import Exchanges,Instrument,Tick,SubscribedInstruments,Candle
+from core.models import Exchanges,Instrument,Tick,SubscribedInstruments,Candle,Percentage
 from datetime import datetime,time
 from core.breeze import BreezeSession
 logger = get_task_logger(__name__)
@@ -49,11 +49,18 @@ def get_master_data():
     os.remove(zip_path)
     #shutil.rmtree(extracted_path)
 
+def count_check(count):
+    if count<50:
+        return True
+    else:
+        return False
+
 @shared_task(name="load stocks") 
-def load_data(id):
+def load_data(id,timestamp):
     ins = Exchanges.objects.get(id=id)
     ins_list = []
-    
+    per = Percentage.objects.get(source=timestamp)
+    counter = 0
     for line in ins.file:
         line = line.decode().split(',')
         data = [item.replace('"','')for item in line]
@@ -78,6 +85,13 @@ def load_data(id):
                         exchange_code=data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
                         )
                     ins_list.append(stock)
+            if count_check(counter):
+                counter += 1
+            else:
+                per.value += counter
+                per.save()
+                counter == 0
+            
         else:# normal Stock
             if Instrument.objects.filter(token =data[0]).exists():
                 pass
@@ -95,6 +109,12 @@ def load_data(id):
                         exchange_code=data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
                         )
                     ins_list.append(stock)
+            if count_check(counter):
+                counter += 1
+            else:
+                per.value += counter
+                per.save()
+                counter == 0
     our_array = np.array(ins_list)
     chunk_size = 800
     chunked_arrays = np.array_split(our_array, len(ins_list) // chunk_size + 1)

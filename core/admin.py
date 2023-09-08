@@ -1,5 +1,5 @@
 from django.contrib import admin
-from core.models import Exchanges,Instrument,BreezeAccount,Tick,SubscribedInstruments,Candle
+from core.models import Exchanges,Instrument,BreezeAccount,Tick,SubscribedInstruments,Candle,Percentage
 # Register your models here.
 
 class InstrumentAdmin(admin.ModelAdmin):
@@ -13,3 +13,4 @@ admin.site.register(Instrument,InstrumentAdmin)
 admin.site.register(BreezeAccount)
 admin.site.register(SubscribedInstruments)
 admin.site.register(Candle)
+admin.site.register(Percentage)

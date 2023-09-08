@@ -1,9 +1,10 @@
 from django.shortcuts import render
+import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from core.tasks import load_data,get_master_data
-from core.models import BreezeAccount,Exchanges,Tick,Instrument,SubscribedInstruments,Candle
+from core.models import BreezeAccount,Exchanges,Tick,Instrument,SubscribedInstruments,Candle,Percentage
 from core.serializers import InstrumentSerializer
 import urllib
 # Create your views here.
@@ -25,8 +26,10 @@ def get_access_code(request):
 @permission_classes([AllowAny])
 def setup(request):
     get_master_data()
+    timestamp = str(datetime.datetime.now()) #unique timestamp to identify all tasks from same instance
+    per = Percentage.objects.create(source=timestamp,value=0)
     for exc in Exchanges.objects.all():
-        load_data.delay(exc.id)
+        load_data.delay(exc.id,timestamp)
     return Response({"working":"fine"})
 
 @api_view(['GET'])
