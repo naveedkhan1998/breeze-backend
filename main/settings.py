@@ -144,10 +144,10 @@ async_load = True
 MAIN_URL = "http://localhost:5000/"
 MAIN_URL_2 = "http://localhost:5000"
 AUTH_USER_MODEL = 'account.User'
-CORS_ALLOWED_ORIGINS = [
+""" CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:1337"
-]
+] """
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_METHODS = [
     "DELETE",
