@@ -40,9 +40,13 @@ services:
       - media_volume:/app/media
     depends_on:
           - db
-          - redis
-  redis:
-    image: redis:alpine
+          - rabbitmq3
+  rabbitmq3:
+    container_name: "rabbitmq"
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672
 
   
 volumes:

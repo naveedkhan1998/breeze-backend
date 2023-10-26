@@ -172,11 +172,11 @@ CORS_ALLOW_CREDENTIALS = True
 mimetypes.add_type("text/css", ".css", True)
 X_FRAME_OPTIONS = 'ALLOW-FROM http://localhost:3000/'
 
-BROKER_URL = 'redis://redis:6379/'
+""" BROKER_URL = 'redis://redis:6379/'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-
+ """
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),

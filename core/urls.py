@@ -1,5 +1,5 @@
 from django.urls import path, include
-from core import views
+from . import views
 
 urlpatterns = [
     path("setup/", views.setup,name="setup"),
