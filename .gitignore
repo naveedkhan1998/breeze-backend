@@ -1,6 +1,6 @@
 __pycache__
 .env
-
+migrations
 media
 venv
 celerybeat-schedule
