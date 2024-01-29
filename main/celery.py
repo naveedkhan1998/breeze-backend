@@ -102,7 +102,7 @@ CELERY_TIMEZONE = 'Asia/Kolkata'
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings')
-CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq3:5672/'
+#CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq3:5672/'
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks(lambda:settings.INSTALLED_APPS)
 BROKER_CONNECTION_RETRY = True

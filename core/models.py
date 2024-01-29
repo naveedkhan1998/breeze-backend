@@ -40,7 +40,7 @@ class Instrument(models.Model):
 
     def __str__(self):
         return "Token:"+str(self.token) +" Instrument:"+ str(self.instrument) +" Expiry:"+\
-              str(self.expiry)+" Strike Price"+str(self.strike_price)
+              str(self.expiry)+" Strike Price"+str(self.strike_price) +"Short Name: "+str(self.short_name)
     
 class SubscribedInstruments(models.Model):
     exchange = models.ForeignKey(Exchanges, on_delete=models.CASCADE)

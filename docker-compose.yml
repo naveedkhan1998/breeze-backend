@@ -41,6 +41,7 @@ services:
     depends_on:
           - db
           - rabbitmq3
+          
   rabbitmq3:
     container_name: "rabbitmq"
     image: rabbitmq:3-management-alpine

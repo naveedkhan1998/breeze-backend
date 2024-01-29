@@ -173,10 +173,12 @@ mimetypes.add_type("text/css", ".css", True)
 X_FRAME_OPTIONS = 'ALLOW-FROM http://localhost:3000/'
 
 """ BROKER_URL = 'redis://redis:6379/'
+BROKER_URL = 'amqp://guest:guest@rabbitmq3:5672/'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
  """
+BROKER_URL = 'amqp://guest:guest@rabbitmq3:5672/'
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
