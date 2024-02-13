@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import Instrument,SubscribedInstruments
+from core.models import Instrument,SubscribedInstruments,Candle
 
 class AllInstrumentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,3 +21,8 @@ class InstrumentSerializer(serializers.ModelSerializer):
         else:
             serializer = AllInstrumentSerializer(instance=instance)
         return serializer.data
+    
+class CandleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= Candle
+        fields = ['open','high','low','close','date']

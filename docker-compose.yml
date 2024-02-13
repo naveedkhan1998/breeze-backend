@@ -2,16 +2,6 @@ version: '3'
 
 services:
 
-  nginx:
-    build: ./nginx
-    volumes:
-      - static_volume:/app/static
-      - media_volume:/app/media
-    ports:
-      - 1337:80
-    depends_on:
-      - app
-
   db:
     image: mysql:8
     ports:
@@ -39,9 +29,9 @@ services:
       - static_volume:/app/static
       - media_volume:/app/media
     depends_on:
-          - db
-          - rabbitmq3
-          
+      - db
+      - rabbitmq3
+
   rabbitmq3:
     container_name: "rabbitmq"
     image: rabbitmq:3-management-alpine
@@ -49,7 +39,6 @@ services:
       - 5672:5672
       - 15672:15672
 
-  
 volumes:
   static_volume:
   media_volume:
