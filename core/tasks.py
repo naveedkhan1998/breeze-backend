@@ -13,6 +13,7 @@ from core.models import (
     SubscribedInstruments,
     Candle,
     Percentage,
+    PercentageInstrument,
 )
 from datetime import datetime, time
 from pytz import timezone
@@ -230,7 +231,7 @@ def sub_candle_maker(ins_id):
     ticks.delete()
 
 
-@shared_task(name='individual candle loader')
+@shared_task(name="individual candle loader")
 def load_instrument_candles(id):
 
     sess = BreezeSession()
@@ -239,7 +240,11 @@ def load_instrument_candles(id):
     if qsi.exists():
         ins = qsi.last()
         qs = Candle.objects.filter(instrument=ins).order_by("date")
-        end = datetime.now()
+        india_tz = timezone("Asia/Kolkata")
+
+        # Get the current time in India
+        end = datetime.now(india_tz)
+        # end = datetime.now()
         start = end - timedelta(weeks=4)
 
         if qs.exists():
@@ -256,11 +261,11 @@ def load_instrument_candles(id):
                 microsecond=0,
             )
             data = fetch_historical_data(
-                sess, start, end, ins.short_name, expiry, ins.stock_token
+                sess, start, end, ins.short_name, expiry, ins.stock_token,ins
             )
         else:
             data = fetch_historical_data(
-                sess, start, end, ins.short_name, None, ins.stock_token
+                sess, start, end, ins.short_name, None, ins.stock_token,ins
             )
 
         if data:
@@ -296,13 +301,10 @@ def load_instrument_candles(id):
                 Candle.objects.bulk_create(ch)
 
 
-
-
 @shared_task(name="candles_loader")
 def load_candles():
     sess = BreezeSession()
     sub_ins = SubscribedInstruments.objects.all()
-    
 
     for ins in sub_ins:
 
@@ -324,11 +326,11 @@ def load_candles():
                 microsecond=0,
             )
             data = fetch_historical_data(
-                sess, start, end, ins.short_name, expiry, ins.stock_token
+                sess, start, end, ins.short_name, expiry, ins.stock_token, ins
             )
         else:
             data = fetch_historical_data(
-                sess, start, end, ins.short_name, None, ins.stock_token
+                sess, start, end, ins.short_name, None, ins.stock_token, ins
             )
 
         if data:
@@ -364,15 +366,25 @@ def load_candles():
                 Candle.objects.bulk_create(ch)
 
 
-def fetch_historical_data(session, start, end, short_name, expiry, stock_token):
+def fetch_historical_data(
+    session, start, end, short_name, expiry, stock_token, instrument
+):
     """
     Fetch historical data from the API for the given instrument.
     """
     data = []
     current_start = start
+    print("Start:", start)
+    print("End:", end)
+    print("Name:", short_name)
+    per = PercentageInstrument.objects.create(instrument=instrument)
+    diff: timedelta = end - start
+    div = diff.days / 2
 
     while current_start < end:
-        current_end = min(current_start + timedelta(days=1), end)
+        per.percentage += (1/(div))*100
+        per.save()
+        current_end = min(current_start + timedelta(days=2), end)
         current_data = session.breeze.get_historical_data_v2(
             "1minute",
             date_parser(current_start),
@@ -387,7 +399,10 @@ def fetch_historical_data(session, start, end, short_name, expiry, stock_token):
         if current_data:
             data.extend(current_data)
 
-        current_start += timedelta(days=1)
+        current_start += timedelta(days=2)
+    per.percentage=100
+    per.is_loading=True
+    per.save()
 
     return data
 
