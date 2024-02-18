@@ -35,7 +35,6 @@ HOST = "localhost"
 # Application definition
 
 INSTALLED_APPS = [
-    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -82,7 +81,7 @@ TEMPLATES = [
     },
 ]
 
-ASGI_APPLICATION = "main.asgi.application"
+ASGI_APPLICATION = "main.wsgi.application"
 
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
@@ -92,7 +91,7 @@ REST_FRAMEWORK = {
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
+""" DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": os.environ.get("MYSQL_DATABASE", "main"),
@@ -107,6 +106,24 @@ DATABASES = {
         },
     }
 }
+ """
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.environ.get("MYSQL_DATABASE", "dtemplarsarsh$default"),
+        "USER": os.environ.get("MYSQL_USER", "dtemplarsarsh"),
+        "PASSWORD": os.environ.get("MYSQL_PASSWORD", "admin@123"),
+        "HOST": os.environ.get(
+            "MYSQL_DATABASE_HOST", "dtemplarsarsh.mysql.pythonanywhere-services.com"
+        ),
+        "default-character-set": "utf8",
+        "OPTIONS": {
+            "init_command": "SET default_storage_engine=INNODB",
+            "charset": "utf8mb4",
+        },
+    }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
