@@ -23,6 +23,7 @@ from core.serializers import (
     SubscribedSerializer,
     CandleSerializer,
     AllInstrumentSerializer,
+    BreezeAccountSerialzer,
 )
 import urllib
 
@@ -43,6 +44,29 @@ def get_access_code(request):
         "https://api.icicidirect.com/apiuser/login?api_key="
         + urllib.parse.quote_plus(acc.api_key)
     )
+
+
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
+def get_breeze_accounts(request):
+    if request.method == "GET":
+        acc = BreezeAccount.objects.all()
+        data = BreezeAccountSerialzer(acc, many=True).data
+        # data[0]["url"] = (
+        #     "https://api.icicidirect.com/apiuser/login?api_key="
+        #     + urllib.parse.quote_plus(acc[0].api_key)
+        # )
+
+        return Response({"msg": "Okay", "data": data}, status=200)
+    if request.method == "POST":
+        id = request.data.get("id")
+        instance = BreezeAccount.objects.get(id=id)
+        serializer = BreezeAccountSerialzer(data=request.data)
+        if serializer.is_valid():
+            serializer.update(
+                instance=instance, validated_data=serializer.validated_data
+            )
+        return Response({"msg": "Okay", "data": serializer.validated_data}, status=200)
 
 
 @api_view(["GET"])
