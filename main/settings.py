@@ -101,7 +101,7 @@ ASGI_APPLICATION = "main.wsgi.application"
     }
 }
  """
-DATABASES = {
+""" DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": os.environ.get("MYSQL_DATABASE", "dtemplarsarsh$default"),
@@ -115,6 +115,12 @@ DATABASES = {
             "init_command": "SET default_storage_engine=INNODB",
             "charset": "utf8mb4",
         },
+    }
+} """
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "mydatabase",
     }
 }
 
@@ -164,10 +170,7 @@ async_load = True
 MAIN_URL = "http://localhost:5000/"
 MAIN_URL_2 = "http://localhost:5000"
 AUTH_USER_MODEL = "account.User"
-""" CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:1337"
-] """
+
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_METHODS = [
     "DELETE",
@@ -191,14 +194,6 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True
 mimetypes.add_type("text/css", ".css", True)
 X_FRAME_OPTIONS = "ALLOW-FROM http://localhost:3000/"
-
-""" BROKER_URL = 'redis://redis:6379/'
-BROKER_URL = 'amqp://guest:guest@rabbitmq3:5672/'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
- """
-BROKER_URL = "amqp://guest:guest@rabbitmq3:5672/"
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=365),

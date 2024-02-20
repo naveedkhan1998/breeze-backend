@@ -1,3 +1,5 @@
+from core.models import Candle
+
 
 def resample_candles(candles, timeframe):
     """
@@ -32,4 +34,3 @@ def resample_candles(candles, timeframe):
         resampled_candles.append(current_candle)
 
     return resampled_candles
-
