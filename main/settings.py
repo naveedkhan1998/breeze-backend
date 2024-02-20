@@ -101,7 +101,7 @@ ASGI_APPLICATION = "main.wsgi.application"
     }
 }
  """
-""" DATABASES = {
+DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": os.environ.get("MYSQL_DATABASE", "dtemplarsarsh$default"),
@@ -116,14 +116,14 @@ ASGI_APPLICATION = "main.wsgi.application"
             "charset": "utf8mb4",
         },
     }
-} """
-DATABASES = {
+}
+""" DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": "mydatabase",
     }
 }
-
+ """
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
