@@ -6,6 +6,7 @@ urlpatterns = [
     path("access/", views.get_access_code, name="access"),
     path("list/", views.item_list, name="ticks"),
     path("subscribe/<int:pk>", views.subscribe_instrument, name="subscribe"),
+    path("breeze/", views.get_breeze_accounts, name="breeze_account"),
     path("candles/<int:pk>", views.get_instrument_candles, name="get_candles"),
     path("delete/<int:pk>", views.delete_instrument, name="delete_instrument"),
     path(
