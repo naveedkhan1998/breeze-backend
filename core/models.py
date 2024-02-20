@@ -1,4 +1,5 @@
 from django.db import models
+from account.models import User
 
 # Create your models here.
 
@@ -8,7 +9,7 @@ class BreezeAccount(models.Model):
     api_key = models.CharField(default=" ", max_length=255)
     api_secret = models.CharField(default=" ", max_length=255)
     session_token = models.CharField(max_length=255, null=True, blank=True)
-    last_updated = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self) -> str:
