@@ -114,12 +114,13 @@ def get_instrument_candles(request, pk):
 @api_view(["DELETE", "POST"])
 @permission_classes([AllowAny])
 def delete_instrument(request, pk):
-    qs = SubscribedInstruments.objects.filter(id=pk)
+    return Response({"msg": "Delete Disabled on Dummy server"})
+    # qs = SubscribedInstruments.objects.filter(id=pk)
 
-    if qs.exists():
-        qs.delete()
-        return Response({"msg": "success"})
-    return Response({"msg": "error"})
+    # if qs.exists():
+    #     qs.delete()
+    #     return Response({"msg": "success"})
+    # return Response({"msg": "error"})
 
 
 @api_view(["GET"])
