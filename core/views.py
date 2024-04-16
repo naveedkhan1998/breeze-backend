@@ -114,13 +114,12 @@ def get_instrument_candles(request, pk):
 @api_view(["DELETE", "POST"])
 @permission_classes([AllowAny])
 def delete_instrument(request, pk):
-    return Response({"msg": "Delete Disabled on Dummy server"})
-    # qs = SubscribedInstruments.objects.filter(id=pk)
-
-    # if qs.exists():
-    #     qs.delete()
-    #     return Response({"msg": "success"})
-    # return Response({"msg": "error"})
+    # return Response({"msg": "Delete Disabled on Dummy server"})
+    qs = SubscribedInstruments.objects.filter(id=pk)
+    if qs.exists():
+        qs.delete()
+        return Response({"msg": "success"})
+    return Response({"msg": "error"})
 
 
 @api_view(["GET"])
@@ -165,7 +164,7 @@ def get_all_instruments(request):
     if qs_1.title == "FON":
         qs = Instrument.objects.filter(
             exchange=qs_1, exchange_code__icontains=search_term
-        )[:10]
+        )[:50]
     else:
         qs = Instrument.objects.filter(
             exchange=qs_1, exchange_code__icontains=search_term
