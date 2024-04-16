@@ -5,3 +5,4 @@ media
 venv
 celerybeat-schedule
 static
+celerybeat-schedule

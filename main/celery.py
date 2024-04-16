@@ -13,7 +13,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings')
 app = Celery('main', include=[])
 
 app.conf.beat_schedule = {
-    """ 'candle_making_job':{
+    'candle_making_job':{
         'task':'candle_maker',
         'schedule':1,
         'relative':True
@@ -22,7 +22,7 @@ app.conf.beat_schedule = {
         'task':'websocket_start',
         'schedule':crontab(minute=30, hour=3, day_of_week='1-5'),
         'relative':True
-    }, """
+    },
 }
 
 

@@ -167,7 +167,7 @@ def get_all_instruments(request):
     if qs_1.title == "FON":
         qs = Instrument.objects.filter(
             exchange=qs_1, exchange_code__icontains=search_term
-        )[:10]
+        )[:50]
     else:
         qs = Instrument.objects.filter(
             exchange=qs_1, exchange_code__icontains=search_term
