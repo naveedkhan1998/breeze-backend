@@ -1,5 +1,7 @@
 #!/bin/sh
 
-echo "STARTING GUNICORN SERVER..."
-gunicorn main.wsgi:application -t 1800 --bind :5000 --daemon
+echo "STARTING HTTP SERVER..."
+python3 http_server.py &
+
+echo "STARTING CELERY WORKER..."
 celery -A main worker --loglevel=INFO --time-limit=0
