@@ -101,6 +101,7 @@ def subscribe_instrument(request, pk):
 
     sub_ins = SubscribedInstruments(exchange_id=ex_id, **data)
     sub_ins.save()
+    load_instrument_candles.delay(sub_ins.id)
 
     return Response({"msg": "success", "data": InstrumentSerializer(sub_ins).data})
 
