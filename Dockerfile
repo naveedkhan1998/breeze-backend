@@ -1,26 +1,32 @@
-FROM python:3.8-alpine
-
+# Use an official Python image from Docker Hub with a specific version tag
+FROM python:3.9
+# Set environment variable to ensure Python output is unbuffered
 ENV PYTHONUNBUFFERED 1
-RUN apk update
-RUN apk add make
-RUN apk add musl-dev wget git build-base linux-headers g++ gcc libffi-dev openssl-dev cargo
 
-#mysql client
-RUN apk add --no-cache mariadb-connector-c-dev
-RUN apk update && apk add mariadb-dev && pip3 install mysqlclient && apk del mariadb-dev
+# Install necessary packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential python3-dev\
+    libffi-dev \
+    libssl-dev \
+    netcat-openbsd \
+    chromium-driver \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apk add netcat-openbsd
-
-RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
-
+# Create the working directory
 RUN mkdir /app
 WORKDIR /app
-RUN pip3 install --upgrade pip setuptools
+
+# Upgrade pip and setuptools
+RUN pip install --upgrade pip setuptools
+
+# Copy and install Python package requirements
 COPY ./requirements.txt /app/requirements.txt
-RUN pip3 install -r requirements.txt
-RUN apk add --no-cache libstdc++
-RUN apk del musl-dev wget git build-base linux-headers g++ gcc libffi-dev openssl-dev cargo
+RUN pip install -r requirements.txt
+
 COPY . /app
+
 EXPOSE 5000
 RUN chmod +x /app/start.sh
+
 ENTRYPOINT ["./start.sh"]

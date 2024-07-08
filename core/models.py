@@ -143,4 +143,4 @@ class Percentage(models.Model):
     value = models.FloatField(blank=True, null=True)
 
     def __str__(self) -> str:
-        return f"Source:{self.source}| Value:{(self.value/5585150.0)*100} %"
+        return f"Source:{self.source}| Value:{self.value:.2f} %"

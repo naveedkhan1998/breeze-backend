@@ -77,46 +77,51 @@ def get_master_data():
     # shutil.rmtree(extracted_path)
 
 
-def count_check(count):
-    if count < 50:
+def count_check(count, is_option=False):
+    limit = 1000
+    if is_option:
+        limit = 30000
+    if count < limit:
         return True
     else:
         return False
 
 
 @shared_task(name="load stocks")
-def load_data(id, timestamp):
+def load_data(id, exchange_name):
     ins = Exchanges.objects.get(id=id)
     ins_list = []
-    per = Percentage.objects.get(source=timestamp)
+    per = Percentage.objects.get(source=exchange_name)
     counter = 0
+    all_instruments = Instrument.objects.all()
+
     for line in ins.file:
         line = line.decode().split(",")
         data = [item.replace('"', "") for item in line]
         if ins.is_option:  # Futures and options
-            if Instrument.objects.filter(token=data[0]).exists():
+            # if all_instruments.filter(token=data[0]):
+            #     pass
+            # else:
+            if data[0] == "Token":
                 pass
             else:
-                if data[0] == "Token":
-                    pass
-                else:
-                    stock = Instrument(
-                        exchange=ins,
-                        stock_token=ins.code + ".1!" + data[0],
-                        token=data[0],
-                        instrument=data[1],
-                        short_name=data[2],
-                        series=data[3],
-                        company_name=data[3],
-                        expiry=datetime.strptime(data[4], "%d-%b-%Y").date(),
-                        strike_price=float(data[5]),
-                        option_type=data[6],
-                        exchange_code=(
-                            data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
-                        ),
-                    )
-                    ins_list.append(stock)
-            if count_check(counter):
+                stock = Instrument(
+                    exchange=ins,
+                    stock_token=ins.code + ".1!" + data[0],
+                    token=data[0],
+                    instrument=data[1],
+                    short_name=data[2],
+                    series=data[3],
+                    company_name=data[3],
+                    expiry=datetime.strptime(data[4], "%d-%b-%Y").date(),
+                    strike_price=float(data[5]),
+                    option_type=data[6],
+                    exchange_code=(
+                        data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
+                    ),
+                )
+                ins_list.append(stock)
+            if count_check(counter, is_option=True):
                 counter += 1
             else:
                 per.value += counter
@@ -124,30 +129,35 @@ def load_data(id, timestamp):
                 counter == 0
 
         else:  # normal Stock
-            if Instrument.objects.filter(token=data[0]).exists():
+            # if all_instruments.filter(token=data[0]):
+            #     pass
+            # else:
+            if data[0] == "Token":
                 pass
             else:
-                if data[0] == "Token":
-                    pass
-                else:
-                    stock = Instrument(
-                        exchange=ins,
-                        stock_token=ins.code + ".1!" + data[0],
-                        token=data[0],
-                        short_name=data[1],
-                        series=data[2],
-                        company_name=data[3],
-                        exchange_code=(
-                            data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
-                        ),
-                    )
-                    ins_list.append(stock)
+                stock = Instrument(
+                    exchange=ins,
+                    stock_token=ins.code + ".1!" + data[0],
+                    token=data[0],
+                    short_name=data[1],
+                    series=data[2],
+                    company_name=data[3],
+                    exchange_code=(
+                        data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
+                    ),
+                )
+                ins_list.append(stock)
             if count_check(counter):
                 counter += 1
             else:
-                per.value += counter
+                value = 0
+                if ins.title == "NSE":
+                    value = (counter / 3837) * 100
+                if ins.title == "BSE":
+                    value = (counter / 10399) * 100
+                per.value += value
                 per.save()
-                counter == 0
+
     our_array = np.array(ins_list)
     chunk_size = 800
     chunked_arrays = np.array_split(our_array, len(ins_list) // chunk_size + 1)
@@ -261,11 +271,11 @@ def load_instrument_candles(id):
                 microsecond=0,
             )
             data = fetch_historical_data(
-                sess, start, end, ins.short_name, expiry, ins.stock_token,ins
+                sess, start, end, ins.short_name, expiry, ins.stock_token, ins
             )
         else:
             data = fetch_historical_data(
-                sess, start, end, ins.short_name, None, ins.stock_token,ins
+                sess, start, end, ins.short_name, None, ins.stock_token, ins
             )
 
         if data:
@@ -382,7 +392,7 @@ def fetch_historical_data(
     div = diff.days / 2
 
     while current_start < end:
-        per.percentage += (1/(div))*100
+        per.percentage += (1 / (div)) * 100
         per.save()
         current_end = min(current_start + timedelta(days=2), end)
         current_data = session.breeze.get_historical_data_v2(
@@ -400,8 +410,8 @@ def fetch_historical_data(
             data.extend(current_data)
 
         current_start += timedelta(days=2)
-    per.percentage=100
-    per.is_loading=True
+    per.percentage = 100
+    per.is_loading = True
     per.save()
 
     return data

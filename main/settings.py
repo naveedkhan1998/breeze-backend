@@ -85,7 +85,7 @@ TEMPLATES = [
 ASGI_APPLICATION = "main.asgi.application"
 
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"]
 }
 
 
@@ -94,19 +94,15 @@ REST_FRAMEWORK = {
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ.get("MYSQL_DATABASE", "main"),
-        "USER": os.environ.get("MYSQL_USER", "main"),
-        "PASSWORD": os.environ.get("MYSQL_PASSWORD", "main"),
-        "HOST": os.environ.get("MYSQL_DATABASE_HOST", "db"),
-        "PORT": os.environ.get("MYSQL_DATABASE_PORT", 3306),
-        "default-character-set": "utf8",
-        "OPTIONS": {
-            "init_command": "SET default_storage_engine=INNODB",
-            "charset": "utf8mb4",
-        },
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "mnk_postgres_ozz5",
+        "USER": "mnk_postgres_ozz5_user",
+        "PASSWORD": "p96CJ5xC2Y7EXFgThSHjziJfmIebKTrn",
+        "HOST": "dpg-cq5v626ehbks73c0ibbg-a.oregon-postgres.render.com",
+        "PORT": "5432",  # PostgreSQL's default port
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -181,13 +177,13 @@ CORS_ALLOW_CREDENTIALS = True
 mimetypes.add_type("text/css", ".css", True)
 X_FRAME_OPTIONS = "ALLOW-FROM http://localhost:3000/"
 
-""" BROKER_URL = 'redis://redis:6379/'
-BROKER_URL = 'amqp://guest:guest@rabbitmq3:5672/'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
- """
-BROKER_URL = "amqp://guest:guest@rabbitmq3:5672/"
+BROKER_URL = "rediss://red-cq5v4ndds78s73d9e30g:kXiCMD9YKBEdfQ6vfgjEA4QcvUKI7iTb@oregon-redis.render.com:6379"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+
+# BROKER_URL = "amqp://guest:guest@rabbitmq3:5672/"
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=365),

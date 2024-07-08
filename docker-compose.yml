@@ -1,23 +1,5 @@
-version: '3'
 
 services:
-
-  db:
-    image: mysql:8
-    ports:
-      - "3306:3306"
-    environment:
-      - MYSQL_DATABASE=main
-      - MYSQL_USER=main
-      - MYSQL_PASSWORD=main
-      - MYSQL_ROOT_PASSWORD=main
-      - MYSQL_LOG_BIN=ON
-      - MYSQL_BINLOG_FORMAT=MIXED
-      - MYSQL_MAX_BINLOG_SIZE=10M
-      - MYSQL_MAX_BINLOG_FILES=1
-    volumes:
-      - /tmp/app/mysqld:/var/run/mysqld
-      - mysql-data:/var/lib/mysql
   app:
     build:
       context: .
@@ -28,19 +10,7 @@ services:
       - /tmp/app/mysqld:/run/mysqld
       - static_volume:/app/static
       - media_volume:/app/media
-    depends_on:
-      - db
-      - rabbitmq3
-
-  rabbitmq3:
-    container_name: "rabbitmq"
-    image: rabbitmq:3-management-alpine
-    ports:
-      - 5672:5672
-      - 15672:15672
 
 volumes:
   static_volume:
   media_volume:
-  mysql-data:
-    driver: local

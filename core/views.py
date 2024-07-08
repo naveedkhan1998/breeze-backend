@@ -73,12 +73,14 @@ def get_breeze_accounts(request):
 @permission_classes([AllowAny])
 def setup(request):
     get_master_data()
-    timestamp = str(
-        datetime.datetime.now()
-    )  # unique timestamp to identify all tasks from same instance
-    per = Percentage.objects.create(source=timestamp, value=0)
+    # timestamp = str(
+    #     datetime.datetime.now()
+    # )  # unique timestamp to identify all tasks from same instance
     for exc in Exchanges.objects.all():
-        load_data.delay(exc.id, timestamp)
+        if exc.title == "FON":
+            continue
+        per = Percentage.objects.create(source=exc.title, value=0)
+        load_data.delay(exc.id, exc.title)
     return Response({"working": "fine"})
 
 
