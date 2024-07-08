@@ -1,7 +1,10 @@
 #!/bin/sh
 
+# Increase the maximum number of processes available
+ulimit -u 4096
+
 echo "STARTING HTTP SERVER..."
-python3 http_server.py &
+python http_server.py &
 
 echo "STARTING CELERY WORKER WITH MEMORY LIMIT..."
-python3 start_celery.py
+python start_celery.py
