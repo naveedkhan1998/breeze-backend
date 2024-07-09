@@ -5,6 +5,7 @@ from account.models import User
 
 
 class BreezeAccount(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(default="ADMIN", max_length=255)
     api_key = models.CharField(default=" ", max_length=255)
     api_secret = models.CharField(default=" ", max_length=255)

@@ -242,9 +242,9 @@ def sub_candle_maker(ins_id):
 
 
 @shared_task(name="individual candle loader")
-def load_instrument_candles(id):
+def load_instrument_candles(id, user_id):
 
-    sess = BreezeSession()
+    sess = BreezeSession(user_id)
     qsi = SubscribedInstruments.objects.filter(id=id)
 
     if qsi.exists():
@@ -312,8 +312,8 @@ def load_instrument_candles(id):
 
 
 @shared_task(name="candles_loader")
-def load_candles():
-    sess = BreezeSession()
+def load_candles(user_id):
+    sess = BreezeSession(user_id)
     sub_ins = SubscribedInstruments.objects.all()
 
     for ins in sub_ins:
@@ -387,7 +387,10 @@ def fetch_historical_data(
     print("Start:", start)
     print("End:", end)
     print("Name:", short_name)
-    per = PercentageInstrument.objects.create(instrument=instrument)
+    per = PercentageInstrument.objects.get(instrument=instrument)
+    per.percentage = 0
+    per.is_loading = False
+    per.save()
     diff: timedelta = end - start
     div = diff.days / 2
 

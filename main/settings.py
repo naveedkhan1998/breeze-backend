@@ -54,10 +54,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -84,9 +84,6 @@ TEMPLATES = [
 
 ASGI_APPLICATION = "main.asgi.application"
 
-REST_FRAMEWORK = {
-    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"]
-}
 
 
 # Database
@@ -95,11 +92,11 @@ REST_FRAMEWORK = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "mnk_postgres_ozz5",
-        "USER": "mnk_postgres_ozz5_user",
-        "PASSWORD": "p96CJ5xC2Y7EXFgThSHjziJfmIebKTrn",
-        "HOST": "dpg-cq5v626ehbks73c0ibbg-a.oregon-postgres.render.com",
-        "PORT": "5432",  # PostgreSQL's default port
+        "NAME": os.environ.get("POSTGRES_DB"),
+        "USER": os.environ.get("POSTGRES_USER"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+        "HOST": os.environ.get("POSTGRES_HOST"),
+        "PORT": os.environ.get("POSTGRES_PORT"),
     }
 }
 
@@ -121,6 +118,14 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
 
 
 # Internationalization
@@ -149,35 +154,29 @@ async_load = True
 MAIN_URL = "http://localhost:5000/"
 MAIN_URL_2 = "http://localhost:5000"
 AUTH_USER_MODEL = "account.User"
-""" CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:1337"
-] """
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_METHODS = [
-    "DELETE",
-    "GET",
-    "OPTIONS",
-    "PATCH",
-    "POST",
-    "PUT",
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://localhost:5173",
+#     "https://breeze-frontend-seven.vercel.app",
+# ]
+
+CSRF_COOKIE_SECURE = False
+CSRF_TRUSTED_ORIGINS = [
+    "https://breeze-frontend-seven.vercel.app",
+    "http://localhost:5173",
 ]
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
+
+#CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "https://breeze-frontend-seven.vercel.app",
+    "http://localhost:5173",
 ]
-CORS_ALLOW_CREDENTIALS = True
+
 mimetypes.add_type("text/css", ".css", True)
 X_FRAME_OPTIONS = "ALLOW-FROM http://localhost:3000/"
 
-BROKER_URL = "rediss://red-cq5v4ndds78s73d9e30g:kXiCMD9YKBEdfQ6vfgjEA4QcvUKI7iTb@oregon-redis.render.com:6379"
+BROKER_URL = os.environ.get("REDIS_URL")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
