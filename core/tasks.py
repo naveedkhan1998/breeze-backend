@@ -387,10 +387,10 @@ def fetch_historical_data(
     print("Start:", start)
     print("End:", end)
     print("Name:", short_name)
-    per = PercentageInstrument.objects.get(instrument=instrument)
-    per.percentage = 0
-    per.is_loading = False
-    per.save()
+    per = PercentageInstrument.objects.filter(instrument=instrument)
+    if per.exists():
+        per.delete()
+    per = PercentageInstrument.objects.create(instrument=instrument)
     diff: timedelta = end - start
     div = diff.days / 2
 
