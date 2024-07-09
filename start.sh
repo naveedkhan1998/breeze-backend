@@ -8,5 +8,5 @@ echo "STARTING HTTP SERVER..."
 python3 http_server.py &  # Run HTTP server in background
 
 echo "STARTING CELERY WORKER WITH MEMORY LIMIT..."
-# celery -A main worker --loglevel=INFO --time-limit=0 --concurrency=1
-celery multi start w1 w2 -A main --loglevel=INFO
+celery -A main worker --loglevel=INFO --time-limit=0 --concurrency=2
+#celery multi start w1 w2 -A main --loglevel=INFO
