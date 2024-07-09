@@ -1,7 +1,12 @@
 from rest_framework import serializers
-from core.models import Instrument, SubscribedInstruments, Candle, BreezeAccount
+from core.models import Instrument, SubscribedInstruments, Candle, BreezeAccount,PercentageInstrument
 
 
+
+class PercentageInstrumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PercentageInstrument
+        fields = "__all__"
 class AllInstrumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instrument
