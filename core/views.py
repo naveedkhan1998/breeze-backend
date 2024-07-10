@@ -180,6 +180,7 @@ def get_candles(request):
     if qs.exists():
         instrument = qs[0]
         qs_2 = Candle.objects.filter(instrument=instrument).order_by("date")
+        len(qs_2)
         if tf:
             timeframe = int(tf)
             qs_2 = resample_candles(qs_2, timeframe)
