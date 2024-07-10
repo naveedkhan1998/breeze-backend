@@ -84,7 +84,9 @@ class SubscribedInstruments(models.Model):
 
 
 class PercentageInstrument(models.Model):
-    instrument = models.ForeignKey(SubscribedInstruments, on_delete=models.CASCADE)
+    instrument = models.ForeignKey(
+        SubscribedInstruments, related_name="percentage", on_delete=models.CASCADE
+    )
     percentage = models.FloatField(default=0.0)
     is_loading = models.BooleanField(default=False)
 
