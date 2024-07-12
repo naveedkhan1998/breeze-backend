@@ -1,8 +1,5 @@
 __pycache__
 .envs
-migrations
 media
 venv
-celerybeat-schedule
-static
 celerybeat-schedule
