@@ -425,32 +425,50 @@ def resample_candles(candles, timeframe):
     """
     Resample candles to the given timeframe.
     """
+    if not candles:
+        return []
+
     resampled_candles = []
-    current_time = None
-    current_candle = None
+    current_time = datetime.fromisoformat(candles[0]["date"])
+    next_time = current_time + timedelta(minutes=timeframe)
+    current_open = candles[0]["open"]
+    current_high = float("-inf")
+    current_low = float("inf")
+    current_close = None
 
     for candle in candles:
-        if current_time is None:
-            current_time = candle.date
-            current_candle = candle
-        elif (candle.date - current_time).seconds >= (timeframe * 60):
-            # Create a new candle with the aggregated values for the timeframe
-            new_candle = Candle(
-                instrument=current_candle.instrument,
-                open=current_candle.open,
-                high=max(current_candle.high, candle.high),
-                low=min(current_candle.low, candle.low),
-                close=candle.close,
-                date=current_candle.date,
-                is_active=current_candle.is_active,
-            )
-            resampled_candles.append(new_candle)
+        candle_date = datetime.fromisoformat(candle["date"])
 
-            # Reset for the new timeframe
-            current_time = candle.date
-            current_candle = candle
+        if candle_date >= next_time:
+            resampled_candles.append(
+                {
+                    "open": current_open,
+                    "high": current_high,
+                    "low": current_low,
+                    "close": current_close,
+                    "date": current_time.isoformat(),
+                }
+            )
+            current_time = next_time
+            next_time = current_time + timedelta(minutes=timeframe)
+            current_open = candle["open"]
+            current_high = candle["high"]
+            current_low = candle["low"]
+        else:
+            current_high = max(current_high, candle["high"])
+            current_low = min(current_low, candle["low"])
+
+        current_close = candle["close"]
+
     # Include the last incomplete candle
-    if current_candle:
-        resampled_candles.append(current_candle)
+    resampled_candles.append(
+        {
+            "open": current_open,
+            "high": current_high,
+            "low": current_low,
+            "close": current_close,
+            "date": current_time.isoformat(),
+        }
+    )
 
     return resampled_candles

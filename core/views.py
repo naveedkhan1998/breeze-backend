@@ -1,9 +1,12 @@
-from django.shortcuts import render
 import datetime
 from rest_framework import status
+from django.shortcuts import render
+from django.core.cache import cache
+from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAuthenticated
-from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from functools import lru_cache
 from core.tasks import (
     load_data,
     get_master_data,
@@ -170,26 +173,40 @@ def get_subscribed_instruments(request):
     return Response({"msg": "success", "data": data})
 
 
+@lru_cache(maxsize=128)
+def get_cached_candles(instrument_id):
+    instrument = get_object_or_404(SubscribedInstruments, id=instrument_id)
+    qs = Candle.objects.filter(instrument=instrument).order_by("date")
+    return CandleSerializer(qs, many=True).data
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_candles(request):
-    id = request.GET.get("id")
+    instrument_id = request.GET.get("id")
     tf = request.GET.get("tf")
+    #cache.clear()
+    if not instrument_id:
+        return Response({"msg": "Missing instrument ID"}, status=400)
 
-    qs = SubscribedInstruments.objects.filter(id=id)
-    if qs.exists():
-        instrument = qs[0]
-        qs_2 = Candle.objects.filter(instrument=instrument).order_by("date")
-        len(qs_2)
-        if tf:
+    cache_key = f"candles_{instrument_id}_{tf}"
+    cached_data = cache.get(cache_key)
+
+    if cached_data:
+        return Response({"msg": "Loaded From Cache", "data": cached_data}, status=200)
+
+    candles = get_cached_candles(instrument_id)
+
+    if tf:
+        try:
             timeframe = int(tf)
-            qs_2 = resample_candles(qs_2, timeframe)
-
-        data = CandleSerializer(qs_2, many=True).data
-        return Response({"msg": "done", "data": data}, status=200)
+            new_candles = resample_candles(candles, timeframe)
+        except ValueError:
+            return Response({"msg": "Invalid timeframe"}, status=400)
     else:
-        return Response({"msg": "Error"})
+        new_candles = candles
 
+    cache.set(cache_key, new_candles, timeout=60 * 10) 
+    return Response({"msg": "done", "data": new_candles}, status=200)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
