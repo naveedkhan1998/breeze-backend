@@ -1,6 +1,0 @@
-REDIS_URL=rediss://red-cq5v4ndds78s73d9e30g:kXiCMD9YKBEdfQ6vfgjEA4QcvUKI7iTb@oregon-redis.render.com:6379
-POSTGRES_DB=mnk_postgres_ozz5
-POSTGRES_USER=mnk_postgres_ozz5_user
-POSTGRES_PASSWORD=p96CJ5xC2Y7EXFgThSHjziJfmIebKTrn
-POSTGRES_HOST=dpg-cq5v626ehbks73c0ibbg-a.oregon-postgres.render.com
-POSTGRES_PORT=5432
