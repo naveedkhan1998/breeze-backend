@@ -208,8 +208,7 @@ def get_candles(request):
     cache.set(cache_key, new_candles, timeout=60 * 10)
     return Response({"msg": "done", "data": new_candles}, status=200)
 
-    cache.set(cache_key, new_candles, timeout=60 * 10) 
-    return Response({"msg": "done", "data": new_candles}, status=200)
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
