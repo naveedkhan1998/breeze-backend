@@ -179,6 +179,13 @@ def get_cached_candles(instrument_id):
     qs = Candle.objects.filter(instrument=instrument).order_by("date")
     return CandleSerializer(qs, many=True).data
 
+
+@lru_cache(maxsize=128)
+def get_cached_candles(instrument_id):
+    instrument = get_object_or_404(SubscribedInstruments, id=instrument_id)
+    qs = Candle.objects.filter(instrument=instrument).order_by("date")
+    return CandleSerializer(qs, many=True).data
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_candles(request):
@@ -203,11 +210,7 @@ def get_candles(request):
         except ValueError:
             return Response({"msg": "Invalid timeframe"}, status=400)
     else:
-        new_candles = candles
-
-    cache.set(cache_key, new_candles, timeout=60 * 10)
-    return Response({"msg": "done", "data": new_candles}, status=200)
-
+        return Response({"msg": "Error"})
 
 
 @api_view(["GET"])
