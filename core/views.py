@@ -179,20 +179,12 @@ def get_cached_candles(instrument_id):
     qs = Candle.objects.filter(instrument=instrument).order_by("date")
     return CandleSerializer(qs, many=True).data
 
-<<<<<<< HEAD
-=======
-
->>>>>>> render-prod
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_candles(request):
     instrument_id = request.GET.get("id")
     tf = request.GET.get("tf")
-<<<<<<< HEAD
-    #cache.clear()
-=======
     # cache.clear()
->>>>>>> render-prod
     if not instrument_id:
         return Response({"msg": "Missing instrument ID"}, status=400)
 
@@ -212,12 +204,9 @@ def get_candles(request):
             return Response({"msg": "Invalid timeframe"}, status=400)
     else:
         new_candles = candles
-<<<<<<< HEAD
-=======
 
     cache.set(cache_key, new_candles, timeout=60 * 10)
     return Response({"msg": "done", "data": new_candles}, status=200)
->>>>>>> render-prod
 
     cache.set(cache_key, new_candles, timeout=60 * 10) 
     return Response({"msg": "done", "data": new_candles}, status=200)
