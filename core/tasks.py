@@ -27,64 +27,60 @@ logger = get_task_logger(__name__)
 @shared_task(name="get_master_files")
 def get_master_data():
     url = "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
-    zip_path = MEDIA_ROOT + "SecurityMaster.zip"
-    extracted_path = MEDIA_ROOT + "extracted/"
-    try:
+    zip_path = os.path.join(MEDIA_ROOT, "SecurityMaster.zip")
+    extracted_path = os.path.join(MEDIA_ROOT, "extracted/")
+
+    # Remove extracted directory if it exists
+    if os.path.exists(extracted_path):
         shutil.rmtree(extracted_path)
-    except:
-        pass
+
+    # Download the zip file
     urllib.request.urlretrieve(url, zip_path)
 
+    # Extract the zip file
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(extracted_path)
 
-    for extracted_file in zf.namelist():
-        # print("File:", extracted_file[:3])
-        ins = Exchanges.objects.filter(title=extracted_file[:3])
-        if ins.exists():
-            ins.update(file="extracted/" + extracted_file)
-        else:  # first time
-            title = extracted_file[:3]
-            if title == "BSE":
-                new_ins = Exchanges(
-                    title=title,
-                    file="extracted/" + extracted_file,
-                    code="1",
-                    exchange="BSE",
-                )
-                new_ins.save()
-            if title == "CDN":
-                pass
-            if title == "FON":
-                new_ins = Exchanges(
-                    title=title,
-                    file="extracted/" + extracted_file,
-                    code="4",
-                    exchange="NFO",
-                    is_option=True,
-                )
-                new_ins.save()
-            if title == "NSE":
-                new_ins = Exchanges(
-                    title=title,
-                    file="extracted/" + extracted_file,
-                    code="4",
-                    exchange="NSE",
-                )
-                new_ins.save()
+        for extracted_file in zf.namelist():
+            exchange_title = extracted_file[:3]
+            exchange_file_path = os.path.join("extracted", extracted_file)
+            exchange_qs = Exchanges.objects.filter(title=exchange_title)
 
+            if exchange_qs.exists():
+                exchange_qs.update(file=exchange_file_path)
+            else:
+                # Create new exchange entry based on the title
+                if exchange_title == "BSE":
+                    new_exchange = Exchanges(
+                        title=exchange_title,
+                        file=exchange_file_path,
+                        code="1",
+                        exchange="BSE",
+                    )
+                elif exchange_title == "FON":
+                    new_exchange = Exchanges(
+                        title=exchange_title,
+                        file=exchange_file_path,
+                        code="4",
+                        exchange="NFO",
+                        is_option=True,
+                    )
+                elif exchange_title == "NSE":
+                    new_exchange = Exchanges(
+                        title=exchange_title,
+                        file=exchange_file_path,
+                        code="4",
+                        exchange="NSE",
+                    )
+                else:
+                    continue  # Skip entries that don't match any known exchange title
+
+                new_exchange.save()
+
+    # Clean up
     os.remove(zip_path)
+    # Optionally remove the extracted files directory
     # shutil.rmtree(extracted_path)
-
-
-def count_check(count, is_option=False):
-    limit = 1000
-    if is_option:
-        limit = 30000
-    if count < limit:
-        return True
-    else:
-        return False
 
 
 @shared_task(name="load stocks")
@@ -93,70 +89,68 @@ def load_data(id, exchange_name):
     ins_list = []
     per = Percentage.objects.get(source=exchange_name)
     counter = 0
-    all_instruments = Instrument.objects.all()
+    all_instruments = set(
+        Instrument.objects.filter(exchange=ins).values_list("token", "short_name")
+    )
 
-    for line in ins.file:
-        line = line.decode().split(",")
-        data = [item.replace('"', "") for item in line]
-        if ins.is_option:  # Futures and options
-            # if all_instruments.filter(token=data[0]):
-            #     pass
-            # else:
-            if data[0] == "Token":
-                pass
-            else:
-                stock = Instrument(
-                    exchange=ins,
-                    stock_token=ins.code + ".1!" + data[0],
-                    token=data[0],
-                    instrument=data[1],
-                    short_name=data[2],
-                    series=data[3],
-                    company_name=data[3],
-                    expiry=datetime.strptime(data[4], "%d-%b-%Y").date(),
-                    strike_price=float(data[5]),
-                    option_type=data[6],
-                    exchange_code=(
-                        data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
-                    ),
-                )
-                ins_list.append(stock)
-            if count_check(counter, is_option=True):
-                counter += 1
-            else:
-                per.value += counter
-                per.save()
-                counter == 0
+    lines = ins.file.read().decode().splitlines()
+    total_lines = len(lines) - 1  # Subtract 1 to exclude header
 
-        else:  # normal Stock
-            # if all_instruments.filter(token=data[0]):
-            #     pass
-            # else:
-            if data[0] == "Token":
-                pass
-            else:
-                stock = Instrument(
-                    exchange=ins,
-                    stock_token=ins.code + ".1!" + data[0],
-                    token=data[0],
-                    short_name=data[1],
-                    series=data[2],
-                    company_name=data[3],
-                    exchange_code=(
-                        data[-1] if data[-1][-2:] != "\r\n" else data[-1][:-2]
-                    ),
-                )
-                ins_list.append(stock)
-            if count_check(counter):
-                counter += 1
-            else:
-                value = 0
-                if ins.title == "NSE":
-                    value = (counter / 3837) * 100
-                if ins.title == "BSE":
-                    value = (counter / 10399) * 100
-                per.value += value
-                per.save()
+    def count_check(count, is_option=False):
+        limit = 1000
+        if is_option:
+            limit = 30000
+        return count < limit
+
+    for index, line in enumerate(lines):
+        if index == 0:  # Skip header
+            continue
+
+        data = [item.replace('"', "") for item in line.split(",")]
+
+        token_shortname_tuple = (data[0], data[1])
+        if token_shortname_tuple in all_instruments:
+            continue
+
+        if ins.is_option:
+            stock = Instrument(
+                exchange=ins,
+                stock_token=f"{ins.code}.1!{data[0]}",
+                token=data[0],
+                instrument=data[1],
+                short_name=data[2],
+                series=data[3],
+                company_name=data[3],
+                expiry=(
+                    datetime.strptime(data[4], "%d-%b-%Y").date() if data[4] else None
+                ),
+                strike_price=float(data[5]),
+                option_type=data[19],
+                exchange_code=data[-1].strip(),
+            )
+        else:
+            stock = Instrument(
+                exchange=ins,
+                stock_token=f"{ins.code}.1!{data[0]}",
+                token=data[0],
+                short_name=data[1],
+                series=data[2],
+                company_name=data[3],
+                exchange_code=data[-1].strip(),
+            )
+
+        ins_list.append(stock)
+        counter += 1
+
+        # Update percentage after processing every 100 lines or when limit is reached
+        if not count_check(counter, ins.is_option):
+            per.value = (index / total_lines) * 100
+            per.save()
+            counter = 0
+
+    # Final update to ensure percentage is correct
+    per.value = 100
+    per.save()
 
     our_array = np.array(ins_list)
     chunk_size = 800
@@ -320,7 +314,7 @@ def load_candles(user_id):
 
         qs = Candle.objects.filter(instrument=ins).order_by("date")
         end = datetime.now()
-        start = end - timedelta(weeks=4)
+        start = end - timedelta(years=2)
 
         if qs.exists():
             start = qs.last().date
