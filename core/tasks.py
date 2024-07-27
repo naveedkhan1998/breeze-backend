@@ -249,7 +249,7 @@ def load_instrument_candles(id, user_id):
         # Get the current time in India
         end = datetime.now(india_tz)
         # end = datetime.now()
-        start = end - timedelta(weeks=8)
+        start = end - timedelta(weeks=4)
 
         if qs.exists():
             start = qs.last().date
