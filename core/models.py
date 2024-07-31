@@ -124,6 +124,7 @@ class Candle(models.Model):
     high = models.FloatField(null=False)
     low = models.FloatField(null=False)
     close = models.FloatField(null=False)
+    volume = models.FloatField(null=True)
     date = models.DateTimeField(null=False)
     is_active = models.BooleanField(default=True)
 

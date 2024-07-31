@@ -1,11 +1,17 @@
 import os
-import zipfile
 import shutil
+import zipfile
 import numpy as np
+import pandas as pd
 import urllib.request
-from main.settings import MEDIA_ROOT
-from celery.utils.log import get_task_logger
+from pytz import timezone
 from celery import shared_task
+from core.helper import date_parser
+from main.settings import MEDIA_ROOT
+from core.breeze import BreezeSession
+from celery.utils.log import get_task_logger
+from datetime import datetime, timedelta, time
+from django.utils import timezone as django_timezone
 from core.models import (
     Exchanges,
     Instrument,
@@ -15,11 +21,7 @@ from core.models import (
     Percentage,
     PercentageInstrument,
 )
-from datetime import datetime, time
-from pytz import timezone
-from datetime import datetime, timedelta
-from core.helper import date_parser
-from core.breeze import BreezeSession
+
 
 logger = get_task_logger(__name__)
 
@@ -125,7 +127,7 @@ def load_data(id, exchange_name):
                     datetime.strptime(data[4], "%d-%b-%Y").date() if data[4] else None
                 ),
                 strike_price=float(data[5]),
-                option_type=data[19],
+                option_type=data[6],
                 exchange_code=data[-1].strip(),
             )
         else:
@@ -249,7 +251,7 @@ def load_instrument_candles(id, user_id):
         # Get the current time in India
         end = datetime.now(india_tz)
         # end = datetime.now()
-        start = end - timedelta(weeks=4)
+        start = end - timedelta(weeks=1)
 
         if qs.exists():
             start = qs.last().date
@@ -284,6 +286,7 @@ def load_instrument_candles(id, user_id):
                 if date.time() < date_compare.time():
                     continue
                 else:
+                    print(item)
                     candle = Candle(
                         instrument=ins,
                         date=date,
@@ -291,6 +294,7 @@ def load_instrument_candles(id, user_id):
                         close=item["close"],
                         low=item["low"],
                         high=item["high"],
+                        volume=item.get("volume", 0),
                     )
                     candle_list.append(candle)
 
@@ -303,6 +307,10 @@ def load_instrument_candles(id, user_id):
 
             for ch in chunked_list:
                 Candle.objects.bulk_create(ch)
+        per = PercentageInstrument.objects.filter(instrument=ins).first()
+        per.percentage = 100
+        per.is_loading = True
+        per.save()
 
 
 @shared_task(name="candles_loader")
@@ -356,6 +364,7 @@ def load_candles(user_id):
                         close=item["close"],
                         low=item["low"],
                         high=item["high"],
+                        volume=item.get("volume", 0),
                     )
                     candle_list.append(candle)
 
@@ -371,7 +380,7 @@ def load_candles(user_id):
 
 
 def fetch_historical_data(
-    session, start, end, short_name, expiry, stock_token, instrument
+    session, start, end, short_name, expiry, stock_token, instrument: Instrument
 ):
     """
     Fetch historical data from the API for the given instrument.
@@ -392,23 +401,35 @@ def fetch_historical_data(
         per.percentage += (1 / (div)) * 100
         per.save()
         current_end = min(current_start + timedelta(days=2), end)
-        current_data = session.breeze.get_historical_data_v2(
-            "1minute",
-            date_parser(current_start),
-            date_parser(current_end),
-            short_name,
-            "NFO" if expiry else ("NSE" if stock_token[0] == "4" else "BSE"),
-            "futures" if expiry else None,
-            date_parser(expiry) if expiry else None,
-        )
+        if instrument.series == "OPTION":
+            current_data = session.breeze.get_historical_data_v2(
+                "1minute",
+                date_parser(current_start),
+                date_parser(current_end),
+                short_name,
+                "NFO" if expiry else ("NSE" if stock_token[0] == "4" else "BSE"),
+                "options" if expiry else None,
+                date_parser(expiry) if expiry else None,
+                "call" if instrument.option_type == "CE" else "put",
+                str(instrument.strike_price),
+            )
+        else:
+            current_data = session.breeze.get_historical_data_v2(
+                "1minute",
+                date_parser(current_start),
+                date_parser(current_end),
+                short_name,
+                "NFO" if expiry else ("NSE" if stock_token[0] == "4" else "BSE"),
+                "futures" if expiry else None,
+                date_parser(expiry) if expiry else None,
+            )
         current_data = current_data.get("Success", [])
 
         if current_data:
             data.extend(current_data)
 
         current_start += timedelta(days=2)
-    per.percentage = 100
-    per.is_loading = True
+    per.percentage = 90
     per.save()
 
     return data
@@ -417,52 +438,34 @@ def fetch_historical_data(
 @shared_task(name="resample_candles")
 def resample_candles(candles, timeframe):
     """
-    Resample candles to the given timeframe.
+    Resample candles to the given timeframe using pandas.
+
+    :param candles: List of dictionaries containing candle data
+    :param timeframe: Integer representing the new timeframe in minutes
+    :return: List of dictionaries with resampled candle data
     """
-    if not candles:
-        return []
 
-    resampled_candles = []
-    current_time = datetime.fromisoformat(candles[0]["date"])
-    next_time = current_time + timedelta(minutes=timeframe)
-    current_open = candles[0]["open"]
-    current_high = float("-inf")
-    current_low = float("inf")
-    current_close = None
-
-    for candle in candles:
-        candle_date = datetime.fromisoformat(candle["date"])
-
-        if candle_date >= next_time:
-            resampled_candles.append(
-                {
-                    "open": current_open,
-                    "high": current_high,
-                    "low": current_low,
-                    "close": current_close,
-                    "date": current_time.isoformat(),
-                }
-            )
-            current_time = next_time
-            next_time = current_time + timedelta(minutes=timeframe)
-            current_open = candle["open"]
-            current_high = candle["high"]
-            current_low = candle["low"]
-        else:
-            current_high = max(current_high, candle["high"])
-            current_low = min(current_low, candle["low"])
-
-        current_close = candle["close"]
-
-    # Include the last incomplete candle
-    resampled_candles.append(
-        {
-            "open": current_open,
-            "high": current_high,
-            "low": current_low,
-            "close": current_close,
-            "date": current_time.isoformat(),
-        }
+    df = pd.DataFrame(candles)
+    df["date"] = pd.to_datetime(df["date"], utc=True)
+    df.set_index("date", inplace=True)
+    rule = f"{timeframe}T"
+    resampled = (
+        df.resample(rule)
+        .agg(
+            {
+                "open": "first",
+                "high": "max",
+                "low": "min",
+                "close": "last",
+                "volume": "sum",
+            }
+        )
+        .dropna()
     )
+    resampled.reset_index(inplace=True)
+    resampled_candles = resampled.to_dict("records")
+    user_timezone = django_timezone.get_current_timezone()
+    for candle in resampled_candles:
+        candle["date"] = candle["date"].astimezone(user_timezone).isoformat()
 
     return resampled_candles
