@@ -44,7 +44,7 @@ class InstrumentSerializer(serializers.ModelSerializer):
 class CandleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Candle
-        fields = ["open", "high", "low", "close", "date"]
+        fields = ["open", "high", "low", "close","volume", "date"]
 
 
 class BreezeAccountSerialzer(serializers.ModelSerializer):

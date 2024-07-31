@@ -1,4 +1,5 @@
 import datetime
+from django.db.models import Q
 from rest_framework import status
 from django.shortcuts import render
 from django.core.cache import cache
@@ -216,22 +217,26 @@ def get_all_instruments(request):
     exchange = request.GET.get("exchange")
     search_term = request.GET.get("search")
 
-    if len(search_term) < 2:
+    if not search_term or len(search_term) < 2:
         return Response({"msg": "Add More Terms"})
 
     qs_1 = Exchanges.objects.filter(title=exchange).last()
+    if not qs_1:
+        return Response({"msg": "Invalid Exchange"})
+
+    filters = Q(exchange=qs_1) & (
+        Q(strike_price__icontains=search_term)
+        | Q(short_name__icontains=search_term)
+        | Q(company_name__icontains=search_term)
+    )
+
+    qs = Instrument.objects.filter(filters)
+
     if qs_1.title == "FON":
-        qs = Instrument.objects.filter(
-            exchange=qs_1, exchange_code__icontains=search_term
-        )[:50]
-    else:
-        qs = Instrument.objects.filter(
-            exchange=qs_1, exchange_code__icontains=search_term
-        )
+        qs = qs[:50]
 
     if qs.exists():
         data = AllInstrumentSerializer(qs, many=True).data
-
         return Response({"msg": "Ok", "data": data})
 
     return Response({"msg": "Error"})
