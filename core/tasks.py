@@ -286,7 +286,6 @@ def load_instrument_candles(id, user_id):
                 if date.time() < date_compare.time():
                     continue
                 else:
-                    print(item)
                     candle = Candle(
                         instrument=ins,
                         date=date,
