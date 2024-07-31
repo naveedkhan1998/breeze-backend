@@ -438,34 +438,57 @@ def fetch_historical_data(
 @shared_task(name="resample_candles")
 def resample_candles(candles, timeframe):
     """
-    Resample candles to the given timeframe using pandas.
-
-    :param candles: List of dictionaries containing candle data
-    :param timeframe: Integer representing the new timeframe in minutes
-    :return: List of dictionaries with resampled candle data
+    Resample candles to the given timeframe.
     """
+    if not candles:
+        return []
 
-    df = pd.DataFrame(candles)
-    df["date"] = pd.to_datetime(df["date"], utc=True)
-    df.set_index("date", inplace=True)
-    rule = f"{timeframe}T"
-    resampled = (
-        df.resample(rule)
-        .agg(
-            {
-                "open": "first",
-                "high": "max",
-                "low": "min",
-                "close": "last",
-                "volume": "sum",
-            }
-        )
-        .dropna()
+    resampled_candles = []
+    current_time = datetime.fromisoformat(candles[0]["date"])
+    next_time = current_time + timedelta(minutes=timeframe)
+    current_open = candles[0]["open"]
+    current_high = float("-inf")
+    current_low = float("inf")
+    current_close = None
+    current_volume = 0
+
+    for candle in candles:
+        candle_date = datetime.fromisoformat(candle["date"])
+
+        if candle_date >= next_time:
+            resampled_candles.append(
+                {
+                    "open": current_open,
+                    "high": current_high,
+                    "low": current_low,
+                    "close": current_close,
+                    "volume": current_volume,
+                    "date": current_time.isoformat(),
+                }
+            )
+            current_time = next_time
+            next_time = current_time + timedelta(minutes=timeframe)
+            current_open = candle["open"]
+            current_high = candle["high"]
+            current_low = candle["low"]
+            current_volume = candle["volume"]
+        else:
+            current_high = max(current_high, candle["high"])
+            current_low = min(current_low, candle["low"])
+            current_volume += candle["volume"]
+
+        current_close = candle["close"]
+
+    # Include the last incomplete candle
+    resampled_candles.append(
+        {
+            "open": current_open,
+            "high": current_high,
+            "low": current_low,
+            "close": current_close,
+            "volume": current_volume,
+            "date": current_time.isoformat(),
+        }
     )
-    resampled.reset_index(inplace=True)
-    resampled_candles = resampled.to_dict("records")
-    user_timezone = django_timezone.get_current_timezone()
-    for candle in resampled_candles:
-        candle["date"] = candle["date"].astimezone(user_timezone).isoformat()
 
     return resampled_candles
