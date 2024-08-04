@@ -173,6 +173,7 @@ CSRF_COOKIE_SECURE = False
 CSRF_TRUSTED_ORIGINS = [
     "https://breeze-frontend-seven.vercel.app",
     "http://localhost:5173",
+    "https://breeze.mnaveedk.com",
 ]
 
 # CORS_ALLOW_ALL_ORIGINS = True
@@ -180,6 +181,7 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = [
     "https://breeze-frontend-seven.vercel.app",
     "http://localhost:5173",
+    "https://breeze.mnaveedk.com",
 ]
 
 mimetypes.add_type("text/css", ".css", True)

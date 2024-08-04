@@ -3,3 +3,7 @@ __pycache__
 media
 venv
 celerybeat-schedule
+.env*
+.flaskenv*
+!.env.project
+!.env.vault
