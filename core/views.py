@@ -67,7 +67,7 @@ def get_breeze_accounts(request):
 
     elif request.method == "POST":
         serializer = BreezeAccountSerialzer(data=request.data)
-        print(request.data)
+        #print(request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(
@@ -121,13 +121,15 @@ def subscribe_instrument(request, pk):
     ins = ins[0]
     data = InstrumentSerializer(ins).data
     data.pop("id")
+    # get the no of weeks to fetch historic data for
+    duration = request.data.get("duration")
     ex_id = data.pop("exchange")
     if SubscribedInstruments.objects.filter(**data).exists():
         return Response({"error": "already subscribed"})
 
     sub_ins = SubscribedInstruments(exchange_id=ex_id, **data)
     sub_ins.save()
-    load_instrument_candles.delay(sub_ins.id, request.user.id)
+    load_instrument_candles.delay(sub_ins.id, request.user.id,duration=duration)
 
     return Response({"msg": "success", "data": InstrumentSerializer(sub_ins).data})
 
@@ -149,6 +151,7 @@ def get_instrument_candles(request, pk):
     qs = SubscribedInstruments.objects.filter(id=pk)
 
     if qs.exists():
+        cache.clear()
         load_instrument_candles.delay(qs[0].id, request.user.id)
         return Response({"msg": "success"})
     return Response({"msg": "error"})

@@ -238,7 +238,7 @@ def sub_candle_maker(ins_id):
 
 
 @shared_task(name="individual candle loader")
-def load_instrument_candles(id, user_id):
+def load_instrument_candles(id, user_id, duration=4):
 
     sess = BreezeSession(user_id)
     qsi = SubscribedInstruments.objects.filter(id=id)
@@ -251,7 +251,7 @@ def load_instrument_candles(id, user_id):
         # Get the current time in India
         end = datetime.now(india_tz)
         # end = datetime.now()
-        start = end - timedelta(weeks=4)
+        start = end - timedelta(weeks=duration)
 
         if qs.exists():
             start = qs.last().date
@@ -321,7 +321,7 @@ def load_candles(user_id):
 
         qs = Candle.objects.filter(instrument=ins).order_by("date")
         end = datetime.now()
-        start = end - timedelta(years=2)
+        start = end - timedelta(weeks=4)
 
         if qs.exists():
             start = qs.last().date
