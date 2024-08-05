@@ -238,7 +238,7 @@ def sub_candle_maker(ins_id):
 
 
 @shared_task(name="individual candle loader")
-def load_instrument_candles(id, user_id):
+def load_instrument_candles(id, user_id, duration=4):
 
     sess = BreezeSession(user_id)
     qsi = SubscribedInstruments.objects.filter(id=id)
@@ -251,7 +251,7 @@ def load_instrument_candles(id, user_id):
         # Get the current time in India
         end = datetime.now(india_tz)
         # end = datetime.now()
-        start = end - timedelta(weeks=4)
+        start = end - timedelta(weeks=duration)
 
         if qs.exists():
             start = qs.last().date
@@ -321,7 +321,7 @@ def load_candles(user_id):
 
         qs = Candle.objects.filter(instrument=ins).order_by("date")
         end = datetime.now()
-        start = end - timedelta(years=2)
+        start = end - timedelta(weeks=4)
 
         if qs.exists():
             start = qs.last().date
@@ -450,9 +450,35 @@ def resample_candles(candles, timeframe):
     current_low = float("inf")
     current_close = None
     current_volume = 0
+    current_day = current_time.date()
 
     for candle in candles:
         candle_date = datetime.fromisoformat(candle["date"])
+        candle_day = candle_date.date()
+
+        # Check if the day has changed
+        if candle_day != current_day:
+            # Include the last incomplete candle of the previous day
+            resampled_candles.append(
+                {
+                    "open": current_open,
+                    "high": current_high,
+                    "low": current_low,
+                    "close": current_close,
+                    "volume": current_volume,
+                    "date": current_time.isoformat(),
+                }
+            )
+            # Reset for the new day
+            current_time = candle_date
+            next_time = current_time + timedelta(minutes=timeframe)
+            current_open = candle["open"]
+            current_high = candle["high"]
+            current_low = candle["low"]
+            current_volume = candle["volume"]
+            current_close = candle["close"]
+            current_day = candle_day
+            continue
 
         if candle_date >= next_time:
             resampled_candles.append(
