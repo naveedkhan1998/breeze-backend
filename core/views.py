@@ -217,17 +217,29 @@ def get_all_instruments(request):
     exchange = request.GET.get("exchange")
     search_term = request.GET.get("search")
 
+    if not exchange:
+        return Response({"msg": "Exchange is required"}, status=400)
+
     if not search_term or len(search_term) < 2:
-        return Response({"msg": "Add More Terms"})
+        return Response(
+            {"msg": "Search term must be at least 2 characters long"}, status=400
+        )
 
     qs_1 = Exchanges.objects.filter(title=exchange).last()
     if not qs_1:
-        return Response({"msg": "Invalid Exchange"})
+        return Response({"msg": "Invalid Exchange"}, status=400)
 
+    # Create filters based on the search term
     filters = Q(exchange=qs_1) & (
         Q(strike_price__icontains=search_term)
         | Q(short_name__icontains=search_term)
         | Q(company_name__icontains=search_term)
+        | Q(stock_token__icontains=search_term)
+        | Q(token__icontains=search_term)
+        | Q(instrument__icontains=search_term)
+        | Q(series__icontains=search_term)
+        | Q(option_type__icontains=search_term)
+        | Q(exchange_code__icontains=search_term)
     )
 
     qs = Instrument.objects.filter(filters)
@@ -239,4 +251,4 @@ def get_all_instruments(request):
         data = AllInstrumentSerializer(qs, many=True).data
         return Response({"msg": "Ok", "data": data})
 
-    return Response({"msg": "Error"})
+    return Response({"msg": "No instruments found"}, status=404)
